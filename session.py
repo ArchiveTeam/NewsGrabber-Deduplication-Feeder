@@ -12,19 +12,6 @@ class Session(object):
         Session.session = requests.Session()
 
     @classmethod
-    def login(cls, account_file):
-        with open(account_file, 'r') as file:
-            email, password = file.read().strip().split(',', 1)
-        cls.session.get('https://archive.org/account/login.php')
-        cls.session.post('https://archive.org/account/login.php',
-            data = {
-                'username': email,
-                'password': password,
-                'action': 'login',
-                'submit': 'Log+in'
-            })
-
-    @classmethod
     def get(cls, url, status_codes=[200], content_length=0, max_tries=1,
           headers=None, cookies=None, preserve_url=False, stream=False,
           sleep_time=0, verify=False):

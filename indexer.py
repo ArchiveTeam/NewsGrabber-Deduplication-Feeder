@@ -4,6 +4,7 @@ import os
 import re
 import time
 
+import internetarchive
 import redis
 
 from session import Session
@@ -22,32 +23,38 @@ class Indexer(object):
             time.sleep(300)
 
     def run_indexing(self):
-        r = Session.get('https://archive.org/metamgr.php?f=exportIDs' \
-                        '&w_collection=archiveteam_newssites*')
-        if not r:
+        req = internetarchive.search_items('collection:archiveteam_newssites',
+                                           config_file='account.ini',
+                                           config={'general':{'secure':False}})
+        if not req:
             return
-        for line in r.text.splitlines():
-            line = line.strip()
-            if line in self.indexed:
+        r = [s['identifier'] for s in req]
+        for item in r:
+            if item in self.indexed:
                 continue
-            if len(line.split('_')[-1]) >= 14 and line.count('_') == 2:
-                if not line in self.items:
-                    self.items[line] = Item(line)
-                    self.items[line].run()
+            if len(item.split('_')[-1]) >= 14 and item.count('_') == 2:
+                if not item in self.items:
+                    self.items[item] = Item(item)
+                    self.items[item].run()
+        del self.indexed
 
     @property
     def indexed(self):
         if not os.path.isfile('indexed'):
             return []
         if not hasattr(self, '_indexed'):
-            finished = []
+            indexed = []
             with open('indexed', 'r') as f:
                 for line in f:
                     line = line.strip()
-                    finished.append(line)
-            self._finished = finished
-        return self._finished
-            
+                    indexed.append(line)
+            self._indexed = indexed
+        return self._indexed
+
+    @indexed.deleter
+    def indexed(self):
+        if hasattr(self, '_indexed'):
+            del self._indexed
 
     @classmethod
     def add_record(cls, url, date, hash_, type_):

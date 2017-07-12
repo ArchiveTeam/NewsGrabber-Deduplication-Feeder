@@ -5,7 +5,6 @@ from session import Session
 
 def main():
     Session()
-    Session.login('account')
     indexer = Indexer()
     indexer.run()
 
